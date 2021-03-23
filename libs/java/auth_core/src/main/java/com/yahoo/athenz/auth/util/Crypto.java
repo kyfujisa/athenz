@@ -116,8 +116,7 @@ public class Crypto {
     public static final String SHA1 = "SHA1";
     public static final String SHA256 = "SHA256";
 
-    static final String ATHENZ_CRYPTO_BC_PROVIDER = "athenz.crypto.bc_provider";
-    private static final String BC_PROVIDER = "BC";
+    static final String ATHENZ_CRYPTO_PROVIDER = "athenz.crypto.provider";
 
     static final SecureRandom RANDOM;
     static {
@@ -136,7 +135,7 @@ public class Crypto {
     }
 
     private static String getProvider() {
-        return System.getProperty(ATHENZ_CRYPTO_BC_PROVIDER, "BC");
+        return System.getProperty(ATHENZ_CRYPTO_PROVIDER, "BC");
     }
 
     private static String getECDSAAlgo() {
@@ -225,7 +224,7 @@ public class Crypto {
     public static String sign(String message, PrivateKey key, String digestAlgorithm) throws CryptoException {
         try {
             String signatureAlgorithm = getSignatureAlgorithm(key.getAlgorithm(), digestAlgorithm);
-            java.security.Signature signer = java.security.Signature.getInstance(signatureAlgorithm, BC_PROVIDER);
+            java.security.Signature signer = java.security.Signature.getInstance(signatureAlgorithm, getProvider());
             signer.initSign(key);
             signer.update(utf8Bytes(message));
             byte[] sig = signer.sign();
@@ -258,7 +257,7 @@ public class Crypto {
     public static byte[] sign(byte[] message, PrivateKey key, String digestAlgorithm) throws CryptoException {
         try {
             String signatureAlgorithm = getSignatureAlgorithm(key.getAlgorithm(), digestAlgorithm);
-            java.security.Signature signer = java.security.Signature.getInstance(signatureAlgorithm, BC_PROVIDER);
+            java.security.Signature signer = java.security.Signature.getInstance(signatureAlgorithm, getProvider());
             signer.initSign(key);
             signer.update(message);
             return signer.sign();
@@ -302,7 +301,7 @@ public class Crypto {
         try {
             byte [] sig = ybase64Decode(signature);
             String signatureAlgorithm = getSignatureAlgorithm(key.getAlgorithm(), digestAlgorithm);
-            java.security.Signature signer = java.security.Signature.getInstance(signatureAlgorithm, BC_PROVIDER);
+            java.security.Signature signer = java.security.Signature.getInstance(signatureAlgorithm, getProvider());
             signer.initVerify(key);
             signer.update(utf8Bytes(message));
             return signer.verify(sig);
@@ -348,7 +347,7 @@ public class Crypto {
                                  String digestAlgorithm) throws CryptoException {
         try {
             String signatureAlgorithm = getSignatureAlgorithm(key.getAlgorithm(), digestAlgorithm);
-            java.security.Signature signer = java.security.Signature.getInstance(signatureAlgorithm, BC_PROVIDER);
+            java.security.Signature signer = java.security.Signature.getInstance(signatureAlgorithm, getProvider());
             signer.initVerify(key);
             signer.update(message);
             return signer.verify(signature);
@@ -485,8 +484,8 @@ public class Crypto {
             } else if (pemObj instanceof X509CertificateHolder) {
                 ///CLOVER:ON
                 try {
-                    return new JcaX509CertificateConverter()
-                            .setProvider(BC_PROVIDER)
+                    return new JcaX509CertificateConverter().
+                            setProvider(getProvider())
                             .getCertificate((X509CertificateHolder) pemObj);
                     ///CLOVER:OFF
                 } catch (CertificateException ex) {
@@ -718,8 +717,8 @@ public class Crypto {
 
                 // Decrypt the private key with the specified password
 
-                InputDecryptorProvider pkcs8Prov = new JceOpenSSLPKCS8DecryptorProviderBuilder()
-                        .setProvider(BC_PROVIDER).build(pwd.toCharArray());
+                InputDecryptorProvider pkcs8Prov = new JceOpenSSLPKCS8DecryptorProviderBuilder().
+                        setProvider(getProvider()).build(pwd.toCharArray());
 
                 PrivateKeyInfo privateKeyInfo = pKeyInfo.decryptPrivateKeyInfo(pkcs8Prov);
                 JcaPEMKeyConverter pemConverter = new JcaPEMKeyConverter();
@@ -1267,9 +1266,9 @@ public class Crypto {
 
             String signatureAlgorithm = getSignatureAlgorithm(caPrivateKey.getAlgorithm(), SHA256);
             ContentSigner caSigner = new JcaContentSignerBuilder(signatureAlgorithm)
-                    .setProvider(BC_PROVIDER).build(caPrivateKey);
+                    setProvider(getProvider()).build(caPrivateKey);
 
-            JcaX509CertificateConverter converter = new JcaX509CertificateConverter().setProvider(BC_PROVIDER);
+            JcaX509CertificateConverter converter = new JcaX509CertificateConverter()setProvider(getProvider());
             cert = converter.getCertificate(caBuilder.build(caSigner));
             ///CLOVER:OFF
         } catch (CertificateException ex) {
@@ -1310,7 +1309,7 @@ public class Crypto {
             Iterator<SignerInformation> it = signers.iterator();
 
             SignerInformationVerifier infoVerifier = new JcaSimpleSignerInfoVerifierBuilder()
-                    .setProvider(BC_PROVIDER).build(publicKey);
+                    setProvider(getProvider()).build(publicKey);
             while (it.hasNext()) {
                 SignerInformation signerInfo = it.next();
                 if (signerInfo.verify(infoVerifier)) {
